@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { BookmarkIcon, SearchIcon, UserIcon, BellIcon } from 'lucide-react';
+import { LogOutIcon, BellIcon } from 'lucide-react';
 
 interface NavigationProps {
     currentScreen: string;
@@ -11,8 +11,9 @@ interface NavigationProps {
 
 export function Navigation({ currentScreen, onNavigate, onLogout, onOpenNotifications, unreadNotificationCount }: NavigationProps) {
     const navItems = [
-        { id: 'board', label: 'Community Board' },
-        { id: 'bookmarks', label: 'Bookmarks' }
+        { id: 'board', label: '게시글 목록' },
+        // TODO: 구현 예정
+        // { id: 'bookmarks', label: 'Bookmarks' }
     ];
 
     return (
@@ -57,14 +58,19 @@ export function Navigation({ currentScreen, onNavigate, onLogout, onOpenNotifica
                     <button
                         onClick={() => onNavigate('newPost')}
                         className="hidden sm:flex items-center gap-2 bg-softPink-500 hover:bg-softPink-600 text-white px-4 py-2 rounded-xl font-medium transition-colors shadow-sm text-sm">
-                        New Post
+                        글쓰기
                     </button>
+                    {/* TODO: 구현 예정
                     <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
                         <SearchIcon className="w-5 h-5" />
                     </button>
+                    */}
+                    {/* TODO: 구현 예정
                     <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
                         <BookmarkIcon className="w-5 h-5" />
                     </button>
+                    */}
+                    <div className="w-px h-6 bg-slate-200 mx-2" />
                     <button
                         onClick={onOpenNotifications}
                         className="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors"
@@ -76,16 +82,11 @@ export function Navigation({ currentScreen, onNavigate, onLogout, onOpenNotifica
                             </span>
                         )}
                     </button>
-                    <div className="w-px h-6 bg-slate-200 mx-2" />
                     <button
                         onClick={onLogout}
-                        className="flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full border border-slate-200 hover:border-softPink-200 hover:bg-softPink-50 transition-colors group">
-                        <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
-                            <UserIcon className="w-4 h-4 text-slate-400 group-hover:text-softPink-500 transition-colors" />
-                        </div>
-                        <span className="text-sm font-medium text-slate-700 group-hover:text-softPink-600 transition-colors">
-                            Sign Out
-                        </span>
+                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors"
+                    >
+                        <LogOutIcon className="w-5 h-5" />
                     </button>
                 </div>
             </div>

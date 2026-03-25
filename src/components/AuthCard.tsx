@@ -51,15 +51,15 @@ export function AuthCard({onLogin, onSignUp}: AuthCardProps) {
                         C
                     </div>
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                        Welcome to Commune
+                        환영합니다
                     </h1>
                     <p className="text-slate-500 text-sm mt-2 text-center">
-                        The modern community platform for developers and designers.
+                        개발자들을 위한 게시판 입니다.
                     </p>
                 </div>
 
                 <div className="flex p-1 bg-slate-50 rounded-xl mb-8 relative">
-                    {['Login', 'Sign Up'].map((tab, index) => {
+                    {['로그인', '회원가입'].map((tab, index) => {
                         const isActive = index === 0 && isLogin || index === 1 && !isLogin;
                         return (
                             <button
@@ -139,7 +139,7 @@ export function AuthCard({onLogin, onSignUp}: AuthCardProps) {
                         type="submit"
                         disabled={isLoading}
                         className="w-full mt-6 bg-softPink-500 hover:bg-softPink-600 text-white font-medium py-3.5 px-4 rounded-xl shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed">
-                        {isLoading ? '처리 중...' : isLogin ? 'Sign In' : 'Create Account'}
+                        {isLoading ? '처리 중...' : isLogin ? '로그인' : '계정 만들기'}
                         {!isLoading && (
                             isLogin
                                 ? <LogInIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform"/>

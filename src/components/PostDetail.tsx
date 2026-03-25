@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {motion, AnimatePresence} from 'framer-motion';
-import {ArrowLeftIcon, ShareIcon, BookmarkIcon, SendIcon, Trash2Icon, PencilIcon, MoreVerticalIcon, CornerDownRightIcon} from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import {ArrowLeftIcon, SendIcon, Trash2Icon, PencilIcon, MoreVerticalIcon, CornerDownRightIcon} from 'lucide-react';
 import {PostDetail as PostDetailType, CommentDetail} from '../lib/api';
 import {LikeButton} from './LikeButton';
 
@@ -151,17 +152,19 @@ export function PostDetail({post, comments, currentUserEmail, onBack, onLikeTogg
                                                                     </button>
                                                                 </>
                                                             )}
-                                                            <button
-                                                                onClick={() => {
-                                                                    setReplyingToCommentId(comment.id);
-                                                                    setReplyText('');
-                                                                    setOpenMenuCommentId(null);
-                                                                }}
-                                                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-softPink-50 hover:text-softPink-600 transition-colors"
-                                                            >
-                                                                <CornerDownRightIcon className="w-4 h-4"/>
-                                                                답글 달기
-                                                            </button>
+                                                            {depth === 0 && (
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setReplyingToCommentId(comment.id);
+                                                                        setReplyText('');
+                                                                        setOpenMenuCommentId(null);
+                                                                    }}
+                                                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-softPink-50 hover:text-softPink-600 transition-colors"
+                                                                >
+                                                                    <CornerDownRightIcon className="w-4 h-4"/>
+                                                                    답글 달기
+                                                                </button>
+                                                            )}
                                                         </motion.div>
                                                     </>
                                                 )}
@@ -200,63 +203,134 @@ export function PostDetail({post, comments, currentUserEmail, onBack, onLikeTogg
                                     </div>
                                 </div>
                             ) : (
-                                <p className="text-slate-600 text-sm leading-relaxed">
-                                    {comment.content}
-                                </p>
+                                <>
+                                    <p className="text-slate-600 text-sm leading-relaxed">
+                                        {comment.content}
+                                    </p>
+
+                                    {/* Reply Form */}
+                                    {replyingToCommentId === comment.id && (
+                                        <motion.div
+                                            initial={{opacity: 0, height: 0}}
+                                            animate={{opacity: 1, height: 'auto'}}
+                                            exit={{opacity: 0, height: 0}}
+                                            transition={{duration: 0.2}}
+                                            className="mt-4 pt-3 border-t border-slate-100 flex gap-3"
+                                        >
+                                            <div className="w-7 h-7 rounded-full bg-softPink-100 flex items-center justify-center flex-shrink-0 text-softPink-600 font-bold text-[10px]">
+                                                U
+                                            </div>
+                                            <div className="flex-grow">
+                                                <textarea
+                                                    value={replyText}
+                                                    onChange={(e) => setReplyText(e.target.value)}
+                                                    placeholder={`@${comment.nickname}에게 답글 달기...`}
+                                                    className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:border-softPink-400 focus:ring-2 focus:ring-softPink-100 outline-none transition-all text-slate-900 text-sm resize-none placeholder:text-slate-400"
+                                                    rows={2}
+                                                    autoFocus
+                                                />
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <button
+                                                        onClick={() => handleSubmitReply(comment.id)}
+                                                        disabled={!replyText.trim() || isSubmittingReply}
+                                                        className="px-3 py-1.5 bg-softPink-500 hover:bg-softPink-600 disabled:bg-slate-200 disabled:text-slate-400 text-white text-xs font-medium rounded-lg transition-colors"
+                                                    >
+                                                        등록
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setReplyingToCommentId(null);
+                                                            setReplyText('');
+                                                        }}
+                                                        className="px-3 py-1.5 text-slate-600 hover:bg-slate-100 text-xs font-medium rounded-lg transition-colors"
+                                                    >
+                                                        취소
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    {/* Replies List */}
+                                    {comment.children && comment.children.length > 0 && (
+                                        <div className="mt-4 space-y-3 pt-3">
+                                            {comment.children.map((reply) => {
+                                                const isReplyOwn = reply.email === currentUserEmail;
+                                                return (
+                                                    <div key={reply.id} className="flex gap-3">
+                                                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-softPink-400 to-softPink-600 flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
+                                                            {reply.nickname.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <div className="flex-grow">
+                                                            <div className="bg-slate-50 p-3 rounded-xl rounded-tl-none">
+                                                                <div className="flex items-center justify-between mb-1">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <h5 className="font-semibold text-slate-900 text-xs">
+                                                                            {reply.nickname}
+                                                                        </h5>
+                                                                        <span className="text-xs text-slate-400">
+                                                                            {new Date(reply.createdAt).toLocaleDateString('ko-KR')}
+                                                                        </span>
+                                                                    </div>
+                                                                    {isReplyOwn && editingCommentId !== reply.id && (
+                                                                        <div className="flex items-center gap-1">
+                                                                            <button
+                                                                                onClick={() => handleStartEditComment(reply.id, reply.content)}
+                                                                                className="p-1 text-slate-400 hover:text-softPink-500 rounded transition-colors"
+                                                                            >
+                                                                                <PencilIcon className="w-3 h-3"/>
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => onDeleteComment(post.id, reply.id)}
+                                                                                className="p-1 text-slate-400 hover:text-red-500 rounded transition-colors"
+                                                                            >
+                                                                                <Trash2Icon className="w-3 h-3"/>
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                {editingCommentId === reply.id ? (
+                                                                    <div className="mt-1">
+                                                                        <textarea
+                                                                            value={editText}
+                                                                            onChange={(e) => setEditText(e.target.value)}
+                                                                            className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 focus:border-softPink-400 focus:ring-2 focus:ring-softPink-100 outline-none transition-all text-slate-900 text-sm resize-none"
+                                                                            rows={2}
+                                                                            autoFocus
+                                                                        />
+                                                                        <div className="flex items-center gap-2 mt-2">
+                                                                            <button
+                                                                                onClick={() => handleSubmitEdit(reply.id)}
+                                                                                disabled={!editText.trim() || isSubmittingEdit || !onEditComment}
+                                                                                className="px-3 py-1.5 text-xs bg-softPink-500 hover:bg-softPink-600 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-lg transition-colors"
+                                                                            >
+                                                                                저장
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => { setEditingCommentId(null); setEditText(''); }}
+                                                                                className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                                                                            >
+                                                                                취소
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <p className="text-slate-600 text-sm leading-relaxed">
+                                                                        {reply.content}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                </>
                             )}
                         </div>
-
-                        {comment.children && comment.children.length > 0 && (
-                            <div className="w-full">
-                                {renderComments(comment.children, depth + 1)}
-                            </div>
-                        )}
                     </div>
-
-                    <AnimatePresence>
-                        {replyingToCommentId === comment.id && (
-                            <motion.div
-                                initial={{opacity: 0, height: 0}}
-                                animate={{opacity: 1, height: 'auto'}}
-                                exit={{opacity: 0, height: 0}}
-                                transition={{duration: 0.2}}
-                                className={`flex gap-3 overflow-hidden ${depth > 0 ? 'ml-12' : 'ml-14'} mt-3`}
-                            >
-                                <div
-                                    className="w-8 h-8 rounded-full bg-softPink-100 flex items-center justify-center flex-shrink-0 text-softPink-600 font-bold text-xs">
-                                    U
-                                </div>
-                                <div className="flex-grow relative">
-                                    <textarea
-                                        value={replyText}
-                                        onChange={(e) => setReplyText(e.target.value)}
-                                        placeholder={`@${comment.nickname}에게 답글 달기...`}
-                                        className="w-full px-3 py-2 pb-10 rounded-xl bg-white border border-slate-200 focus:border-softPink-400 focus:ring-2 focus:ring-softPink-100 outline-none transition-all text-slate-900 placeholder:text-slate-400 text-sm resize-none shadow-sm"
-                                        rows={2}
-                                        autoFocus
-                                    />
-                                    <div className="absolute bottom-3 right-2 flex items-center gap-1.5">
-                                        <button
-                                            onClick={() => {
-                                                setReplyingToCommentId(null);
-                                                setReplyText('');
-                                            }}
-                                            className="px-2.5 py-1 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                                        >
-                                            취소
-                                        </button>
-                                        <button
-                                            onClick={() => handleSubmitReply(comment.id)}
-                                            disabled={!replyText.trim() || isSubmittingReply}
-                                            className="bg-softPink-500 hover:bg-softPink-600 disabled:bg-slate-200 disabled:text-slate-400 text-white p-1.5 rounded-lg transition-colors"
-                                        >
-                                            <SendIcon className="w-3.5 h-3.5"/>
-                                        </button>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
                 </React.Fragment>
             );
         });
@@ -274,7 +348,7 @@ export function PostDetail({post, comments, currentUserEmail, onBack, onLikeTogg
                     onClick={onBack}
                     className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm group">
                     <ArrowLeftIcon className="w-4 h-4 group-hover:-translate-x-1 transition-transform"/>
-                    Back to Board
+                    뒤로가기
                 </button>
                 <div className="flex items-center gap-2">
                     {post.email === currentUserEmail && (
@@ -293,17 +367,21 @@ export function PostDetail({post, comments, currentUserEmail, onBack, onLikeTogg
                             >
                                 <Trash2Icon className="w-5 h-5"/>
                             </button>
-                            <div className="w-px h-6 bg-slate-200 mx-1"/>
+                            {/*<div className="w-px h-6 bg-slate-200 mx-1"/>*/}
                         </>
                     )}
+                    {/* TODO: 구현 예정
                     <button
                         className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
                         <BookmarkIcon className="w-5 h-5"/>
                     </button>
+                    */}
+                    {/* TODO: 구현 예정
                     <button
                         className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
                         <ShareIcon className="w-5 h-5"/>
                     </button>
+                    */}
                 </div>
             </div>
 
@@ -340,11 +418,7 @@ export function PostDetail({post, comments, currentUserEmail, onBack, onLikeTogg
             </header>
 
             <article className="prose prose-slate prose-lg max-w-none mb-16">
-                {post.content.split('\n\n').map((paragraph, idx) => (
-                    <p key={idx} className="text-slate-700 leading-relaxed mb-6">
-                        {paragraph}
-                    </p>
-                ))}
+                <ReactMarkdown>{post.content}</ReactMarkdown>
             </article>
 
             <section className="border-t border-slate-200 pt-10">

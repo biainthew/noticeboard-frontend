@@ -7,6 +7,13 @@ export const tokenStorage = {
     remove: () => localStorage.removeItem('accessToken')
 };
 
+// Refresh Token 관리
+export const refreshTokenStorage = {
+    get: () => localStorage.getItem('refreshToken'),
+    set: (token: string) => localStorage.setItem('refreshToken', token),
+    remove: () => localStorage.removeItem('refreshToken'),
+};
+
 // 현재 유저 email 관리
 export const userEmailStorage = {
     get: () => localStorage.getItem('userEmail'),
@@ -15,7 +22,7 @@ export const userEmailStorage = {
 };
 
 // 공통 fetch 함수
-const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+const fetchWithAuth = async (url: string, options: RequestInit = {}, retry = true) => {
     const token = tokenStorage.get();
 
     const headers: Record<string, string> = {
@@ -31,6 +38,26 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
         ...options,
         headers,
     });
+
+    // 401이고 재시도 가능한 경우 토큰 갱신 후 재요청
+    if (response.status === 401 && retry) {
+        try {
+            await authApi.refresh();
+            return fetchWithAuth(url, options, false); // 재시도는 한 번만
+        } catch {
+            tokenStorage.remove();
+            refreshTokenStorage.remove();
+            window.location.href = '/'; // 로그인 화면으로 강제 이동
+            throw new Error('세션이 만료됐습니다. 다시 로그인해 주세요.');
+        }
+    }
+
+    if (response.status === 403) {
+        tokenStorage.remove();
+        refreshTokenStorage.remove();
+        window.location.href = '/';
+        throw new Error('접근 권한이 없습니다.');
+    }
 
     if (!response.ok) {
         const error = await response.json();
@@ -61,6 +88,7 @@ export interface PostSummary {
     nickname: string;
     viewCount: number;
     likeCount: number;
+    liked: boolean;
     createdAt: string;
 }
 
@@ -115,15 +143,45 @@ export const authApi = {
         }) as Promise<MemberInfo>,
 
     login: async (email: string, password: string) => {
-        const data = await fetchWithAuth('/api/auth/login', {
+        const response = await fetch(`${BASE_URL}/api/auth/login`, {
             method: 'POST',
-            body: JSON.stringify({email, password}),
-        }) as TokenResponse;
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || '로그인에 실패했습니다.');
+        }
+
+        const data: TokenResponse = await response.json();
         tokenStorage.set(data.accessToken);
+        refreshTokenStorage.set(data.refreshToken);
         return data;
     },
 
     logout: () => tokenStorage.remove(),
+
+    refresh: async () => {
+        const refreshToken = refreshTokenStorage.get();
+        if (!refreshToken) throw new Error('Refresh Token이 없습니다.');
+
+        const response = await fetch(`${BASE_URL}/api/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+        });
+
+        if (!response.ok) {
+            tokenStorage.remove();
+            refreshTokenStorage.remove();
+            throw new Error('토큰 갱신에 실패했습니다.');
+        }
+
+        const data = await response.json();
+        tokenStorage.set(data.accessToken);
+        return data.accessToken;
+    },
 }
 
 // Post API

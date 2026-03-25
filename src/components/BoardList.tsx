@@ -41,10 +41,10 @@ export function BoardList({posts, isLoading, onPostClick, onLikeToggle}: BoardLi
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                        Community Board
+                        게시글 목록
                     </h1>
                     <p className="text-slate-500 mt-1">
-                        Discover discussions, tutorials, and insights.
+                        다양한 이야기를 만나보세요.
                     </p>
                 </div>
             </div>
@@ -88,11 +88,11 @@ export function BoardList({posts, isLoading, onPostClick, onLikeToggle}: BoardLi
                                 className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between text-slate-400">
                                 <div className="flex items-center gap-4">
                                     <LikeButton
-                                        liked={false}
+                                        liked={post.liked}
                                         count={post.likeCount}
                                         onToggle={(e) => {
                                             e.stopPropagation();
-                                            onLikeToggle(post.id, false);
+                                            onLikeToggle(post.id, post.liked);
                                         }}
                                     />
                                     <div className="flex items-center gap-1.5">

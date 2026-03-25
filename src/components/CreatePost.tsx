@@ -1,6 +1,6 @@
 import React, {useState, useRef} from 'react';
 import {motion, AnimatePresence} from 'framer-motion';
-import {ArrowLeftIcon, EyeIcon, SendIcon, ImageIcon, XIcon} from 'lucide-react';
+import {ArrowLeftIcon, SendIcon, ImageIcon, XIcon} from 'lucide-react';
 import {imageApi} from '../lib/api';
 
 interface UploadedImage {
@@ -20,7 +20,7 @@ interface CreatePostProps {
 export function CreatePost({onPublish, onCancel, initialTitle, initialContent, isEditMode}: CreatePostProps) {
     const [title, setTitle] = useState(initialTitle ?? '');
     const [content, setContent] = useState(initialContent ?? '');
-    const [showPreview, setShowPreview] = useState(false);
+    const [showPreview] = useState(false);
     const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
     const [isPublishing, setIsPublishing] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -87,16 +87,17 @@ export function CreatePost({onPublish, onCancel, initialTitle, initialContent, i
                     onClick={onCancel}
                     className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm group">
                     <ArrowLeftIcon className="w-4 h-4 group-hover:-translate-x-1 transition-transform"/>
-                    Back to Board
+                    뒤로가기
                 </button>
-                <div className="flex items-center gap-3">
+                {/*TODO 구현예정*/}
+                {/*<div className="flex items-center gap-3">
                     <button
                         onClick={() => setShowPreview(!showPreview)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-colors ${showPreview ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}>
                         <EyeIcon className="w-4 h-4"/>
                         {showPreview ? 'Edit' : 'Preview'}
                     </button>
-                </div>
+                </div>*/}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">

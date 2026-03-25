@@ -43,15 +43,31 @@ export function App() {
         setToasts((prev) => prev.filter((toast) => toast.id !== id));
     };
 
-    // 앱 시작 시 토큰 있으면 바로 board로
+    // 앱 시작 시 토큰 있으면 저장된 화면 복원
     useEffect(() => {
-        if (tokenStorage.get()) {
-            setCurrentScreen('board');
-        }
+        const restore = async () => {
+            if (!tokenStorage.get()) return;
+            const savedScreen = sessionStorage.getItem('currentScreen') as Screen | null;
+            const savedPostId = sessionStorage.getItem('currentPostId');
+            if ((savedScreen === 'post' || savedScreen === 'editPost') && savedPostId) {
+                const postId = Number(savedPostId);
+                const [post, commentList] = await Promise.all([
+                    postApi.getDetail(postId),
+                    commentApi.getList(postId),
+                ]);
+                setSelectedPost(post);
+                setComments(commentList);
+                setCurrentScreen(savedScreen);
+            } else {
+                setCurrentScreen(savedScreen && savedScreen !== 'auth' ? savedScreen : 'board');
+            }
+        };
+        restore();
     }, []);
 
-    // board 진입 시 게시글 목록 조회
+    // 화면 전환 시 sessionStorage에 저장 + board 진입 시 게시글 목록 조회
     useEffect(() => {
+        sessionStorage.setItem('currentScreen', currentScreen);
         if (currentScreen === 'board') {
             fetchPosts();
         }
@@ -106,6 +122,8 @@ export function App() {
     const handleLogout = () => {
         authApi.logout();
         userEmailStorage.remove();
+        sessionStorage.removeItem('currentScreen');
+        sessionStorage.removeItem('currentPostId');
         setCurrentUserEmail('');
         setCurrentScreen('auth');
     };
@@ -119,6 +137,7 @@ export function App() {
             ]);
             setSelectedPost(post);
             setComments(commentList);
+            sessionStorage.setItem('currentPostId', String(id));
             setCurrentScreen('post');
         } catch (e) {
             addToast('게시글을 불러오지 못했습니다.');
@@ -128,6 +147,7 @@ export function App() {
     };
 
     const handleBackToBoard = () => {
+        sessionStorage.removeItem('currentPostId');
         setSelectedPost(null);
         setComments([]);
         setCurrentScreen('board');
@@ -144,12 +164,12 @@ export function App() {
             // 목록 또는 상세 좋아요 수 업데이트
             setPosts((prev) =>
                 prev.map((p) =>
-                    p.id === id ? {...p, likeCount: liked ? p.likeCount - 1 : p.likeCount + 1} : p
+                    p.id === id ? {...p, liked: !liked, likeCount: liked ? p.likeCount - 1 : p.likeCount + 1} : p
                 )
             );
             if (selectedPost?.id === id) {
                 setSelectedPost((prev) =>
-                    prev ? {...prev, likeCount: liked ? prev.likeCount - 1 : prev.likeCount + 1} : prev
+                    prev ? {...prev, liked: !liked, likeCount: liked ? prev.likeCount - 1 : prev.likeCount + 1} : prev
                 );
             }
         } catch (e) {
@@ -160,7 +180,17 @@ export function App() {
     const handleAddComment = async (postId: number, content: string, parentId?: number) => {
         try {
             const newComment = await commentApi.create(postId, content, parentId);
-            setComments((prev) => [...prev, newComment]);
+            if (parentId) {
+                setComments((prev) =>
+                    prev.map((c) =>
+                        c.id === parentId
+                            ? {...c, children: [...(c.children || []), newComment]}
+                            : c
+                    )
+                );
+            } else {
+                setComments((prev) => [...prev, newComment]);
+            }
         } catch (e) {
             addToast('댓글 작성에 실패했습니다.');
         }
@@ -169,6 +199,14 @@ export function App() {
     const handleDeleteComment = async (postId: number, commentId: number) => {
         try {
             await commentApi.delete(postId, commentId);
+            setComments((prev) =>
+                prev
+                    .filter((c) => c.id !== commentId)
+                    .map((c) => ({
+                        ...c,
+                        children: c.children.filter((r) => r.id !== commentId),
+                    }))
+            );
             addToast('댓글이 삭제됐습니다.');
         } catch (e) {
             addToast('댓글 삭제에 실패했습니다.');
@@ -219,7 +257,18 @@ export function App() {
     const handleEditComment = async (postId: number, commentId: number, content: string) => {
         try {
             const updated = await commentApi.update(postId, commentId, content);
-            setComments((prev) => prev.map((c) => c.id === commentId ? updated : c));
+            setComments((prev) =>
+                prev.map((c) =>
+                    c.id === commentId
+                        ? updated
+                        : {
+                            ...c,
+                            children: c.children.map((r) =>
+                                r.id === commentId ? updated : r
+                            ),
+                        }
+                )
+            );
             addToast('댓글이 수정됐습니다.');
         } catch (e) {
             addToast('댓글 수정에 실패했습니다.');
