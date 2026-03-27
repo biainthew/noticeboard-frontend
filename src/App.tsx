@@ -33,6 +33,7 @@ export function App() {
     const [isLoading, setIsLoading] = useState(false);
     const [notifications, setNotifications] = useState<NotificationDetail[]>([]);
     const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false);
 
     const addToast = (message: string) => {
         const id = Math.random().toString(36).substring(2, 9);
@@ -46,7 +47,10 @@ export function App() {
     // 앱 시작 시 토큰 있으면 저장된 화면 복원
     useEffect(() => {
         const restore = async () => {
-            if (!tokenStorage.get()) return;
+            if (!tokenStorage.get()) {
+                setIsInitialized(true);
+                return;
+            }
             const savedScreen = sessionStorage.getItem('currentScreen') as Screen | null;
             const savedPostId = sessionStorage.getItem('currentPostId');
             if ((savedScreen === 'post' || savedScreen === 'editPost') && savedPostId) {
@@ -61,6 +65,7 @@ export function App() {
             } else {
                 setCurrentScreen(savedScreen && savedScreen !== 'auth' ? savedScreen : 'board');
             }
+            setIsInitialized(true);
         };
         restore();
     }, []);
@@ -104,6 +109,7 @@ export function App() {
             await authApi.login(email, password);
             userEmailStorage.set(email);
             setCurrentUserEmail(email);
+            await fetchPosts();
             setCurrentScreen('board');
         } catch (e) {
             addToast('로그인에 실패했습니다.');
@@ -287,6 +293,8 @@ export function App() {
             addToast('알림 읽음 처리에 실패했습니다.');
         }
     };
+
+    if (!isInitialized) return null;
 
     return (
         <div className="min-h-screen bg-[#F9FAFB] font-sans text-slate-900">
