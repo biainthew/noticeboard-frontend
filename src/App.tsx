@@ -1,5 +1,4 @@
-import {useState, useEffect} from 'react';
-import {AnimatePresence} from 'framer-motion';
+import {useState, useEffect, useCallback} from 'react';
 import {AuthCard} from './components/AuthCard';
 import {BoardList} from './components/BoardList';
 import {PostDetail} from './components/PostDetail';
@@ -71,14 +70,6 @@ export function App() {
         restore();
     }, []);
 
-    // 화면 전환 시 sessionStorage에 저장 + board 진입 시 게시글 목록 조회
-    useEffect(() => {
-        sessionStorage.setItem('currentScreen', currentScreen);
-        if (currentScreen === 'board') {
-            fetchPosts();
-        }
-    }, [currentScreen]);
-
     // 알림 목록 조회 (로그인 상태일 때)
     useEffect(() => {
         if (!isInitialized) return;
@@ -92,7 +83,7 @@ export function App() {
             .catch(() => {/*empty*/});
     }, [isInitialized]);
 
-    const fetchPosts = async () => {
+    const fetchPosts = useCallback(async () => {
         try {
             setIsLoading(true);
             const data = await postApi.getList();
@@ -102,7 +93,19 @@ export function App() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
+
+    // 화면 전환 시 sessionStorage에 저장 + board 진입 시 게시글 목록 조회
+    useEffect(() => {
+        const updateScreenAndFetch = async () => {
+            sessionStorage.setItem('currentScreen', currentScreen);
+
+            if (currentScreen === 'board') {
+                await fetchPosts();
+            }
+        };
+        updateScreenAndFetch();
+    }, [currentScreen, fetchPosts]);
 
     const handleLogin = async (email: string, password: string) => {
         try {
@@ -119,7 +122,7 @@ export function App() {
             if (token) {
                 notificationApi.getList()
                     .then((data) => setNotifications(Array.isArray(data) ? data : []))
-                    .catch(() => {});
+                    .catch(() => {/*empty*/});
                 sseManager.connect(token, (notification) => {
                     setNotifications((prev) => [notification, ...prev]);
                 });
@@ -325,60 +328,58 @@ export function App() {
             )}
 
             <main>
-                <AnimatePresence mode="wait">
-                    {currentScreen === 'auth' && (
-                        <AuthCard
-                            key="auth"
-                            onLogin={handleLogin}
-                            onSignUp={handleSignUp}
-                        />
-                    )}
+                {currentScreen === 'auth' && (
+                    <AuthCard
+                        key="auth"
+                        onLogin={handleLogin}
+                        onSignUp={handleSignUp}
+                    />
+                )}
 
-                    {currentScreen === 'board' && (
-                        <BoardList
-                            key="board"
-                            posts={posts}
-                            isLoading={isLoading}
-                            onPostClick={handlePostClick}
-                            onLikeToggle={handleLikeToggle}
-                        />
-                    )}
+                {currentScreen === 'board' && (
+                    <BoardList
+                        key="board"
+                        posts={posts}
+                        isLoading={isLoading}
+                        onPostClick={handlePostClick}
+                        onLikeToggle={handleLikeToggle}
+                    />
+                )}
 
-                    {currentScreen === 'post' && selectedPost && (
-                        <PostDetail
-                            key={`post-${selectedPost.id}`}
-                            post={selectedPost}
-                            comments={comments}
-                            currentUserEmail={currentUserEmail}
-                            onBack={handleBackToBoard}
-                            onLikeToggle={handleLikeToggle}
-                            onAddComment={handleAddComment}
-                            onEditComment={handleEditComment}
-                            onDeleteComment={handleDeleteComment}
-                            onEditPost={handleEditPost}
-                            onDeletePost={handleDeletePost}
-                        />
-                    )}
+                {currentScreen === 'post' && selectedPost && (
+                    <PostDetail
+                        key={`post-${selectedPost.id}`}
+                        post={selectedPost}
+                        comments={comments}
+                        currentUserEmail={currentUserEmail}
+                        onBack={handleBackToBoard}
+                        onLikeToggle={handleLikeToggle}
+                        onAddComment={handleAddComment}
+                        onEditComment={handleEditComment}
+                        onDeleteComment={handleDeleteComment}
+                        onEditPost={handleEditPost}
+                        onDeletePost={handleDeletePost}
+                    />
+                )}
 
-                    {currentScreen === 'newPost' && (
-                        <CreatePost
-                            key="newPost"
-                            onPublish={handleCreatePost}
-                            onCancel={handleCancelPost}
-                        />
-                    )}
+                {currentScreen === 'newPost' && (
+                    <CreatePost
+                        key="newPost"
+                        onPublish={handleCreatePost}
+                        onCancel={handleCancelPost}
+                    />
+                )}
 
-                    {currentScreen === 'editPost' && selectedPost && (
-                        <CreatePost
-                            key={`editPost-${selectedPost.id}`}
-                            onPublish={(title, content) => handleUpdatePost(selectedPost.id, title, content)}
-                            onCancel={() => setCurrentScreen('post')}
-                            initialTitle={selectedPost.title}
-                            initialContent={selectedPost.content}
-                            isEditMode
-                        />
-                    )}
-                </AnimatePresence>
+                {currentScreen === 'editPost' && selectedPost && (
+                    <CreatePost
+                        key={`editPost-${selectedPost.id}`}
+                        onPublish={(title, content) => handleUpdatePost(selectedPost.id, title, content)}
+                        onCancel={() => setCurrentScreen('post')}
+                        initialTitle={selectedPost.title}
+                        initialContent={selectedPost.content}
+                        isEditMode
+                    />
+                )}
             </main>
 
             <Toast toasts={toasts} removeToast={removeToast}/>
