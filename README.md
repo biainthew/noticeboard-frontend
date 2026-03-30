@@ -103,3 +103,14 @@ GitHub Actions를 통해 `main` 브랜치 push 시 자동 배포된다.
 1. `npm ci` → `npm run build`
 2. S3(`noticeboard-front` 버킷)에 빌드 결과 업로드
 3. CloudFront 캐시 무효화
+
+## 백엔드
+
+- GitHub: https://github.com/biainthew/noticeboard
+
+## 테스트 계정
+
+| 이메일 | 비밀번호 |
+|--------|----------|
+| user1@test.com | user1234 |
+| user2@test.com | user1234 |
