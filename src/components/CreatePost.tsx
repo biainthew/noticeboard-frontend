@@ -62,6 +62,9 @@ export function CreatePost({onPublish, onCancel, initialTitle, initialContent, i
                     ...prev,
                     {id: Math.random().toString(36).substring(2, 9), url: s3Url, name: file.name}
                 ]);
+
+                // 본문에 마크다운 이미지 삽입
+                setContent((prev) => prev + `\n\n![${file.name}](${s3Url})`);
             }
         } catch (e) {
             alert(`이미지 업로드에 실패했습니다.\n${e instanceof Error ? e.message : String(e)}`);
