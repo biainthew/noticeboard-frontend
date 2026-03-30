@@ -1,3 +1,5 @@
+import { fetchEventSource } from '@microsoft/fetch-event-source';
+
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // 토큰 관리
@@ -250,29 +252,22 @@ export const notificationApi = {
         fetchWithAuth('/api/notifications/read-all', {method: 'PATCH'}),
 
     subscribe: (token: string, onMessage: (data: NotificationDetail) => void) => {
-        fetch(`${BASE_URL}/api/notifications/subscribe`, {
-            headers: {'Authorization': `Bearer ${token}`},
-        }).then(response => {
-            const reader = response.body!.getReader();
-            const decoder = new TextDecoder();
-
-            const read = () => {
-                reader.read().then(({done, value}) => {
-                    if (done) return;
-                    const text = decoder.decode(value);
-                    const lines = text.split('\n').filter(line => line.startsWith('data:'));
-                    lines.forEach(line => {
-                        try {
-                            const data = JSON.parse(line.replace('data:', '').trim());
-                            onMessage(data);
-                        } catch {
-                            // connect 이벤트 등 JSON 아닌 경우 무시
-                        }
-                    });
-                    read();
-                });
-            };
-            read();
+        fetchEventSource(`${BASE_URL}/api/notifications/subscribe`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+            onmessage(event) {
+                if (event.event === 'connect') return; // 연결 확인 이벤트 무시
+                try {
+                    const data = JSON.parse(event.data);
+                    onMessage(data);
+                } catch {
+                    // JSON 파싱 실패 시 무시
+                }
+            },
+            onerror(err) {
+                console.error('SSE 연결 오류:', err);
+            },
         });
     },
 };
