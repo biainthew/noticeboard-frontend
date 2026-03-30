@@ -17,11 +17,29 @@ interface CreatePostProps {
     isEditMode?: boolean;
 }
 
+function parseImagesFromContent(text: string): UploadedImage[] {
+    const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+    const images: UploadedImage[] = [];
+    let match;
+    while ((match = imageRegex.exec(text)) !== null) {
+        images.push({id: Math.random().toString(36).substring(2, 9), url: match[2], name: match[1]});
+    }
+    return images;
+}
+
+function removeImagesFromContent(text: string): string {
+    return text.replace(/\n*!\[[^\]]*\]\([^)]+\)/g, '').trim();
+}
+
 export function CreatePost({onPublish, onCancel, initialTitle, initialContent, isEditMode}: CreatePostProps) {
     const [title, setTitle] = useState(initialTitle ?? '');
-    const [content, setContent] = useState(initialContent ?? '');
+    const [content, setContent] = useState(() =>
+        isEditMode && initialContent ? removeImagesFromContent(initialContent) : (initialContent ?? '')
+    );
     const [showPreview] = useState(false);
-    const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+    const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>(() =>
+        isEditMode && initialContent ? parseImagesFromContent(initialContent) : []
+    );
     const [isPublishing, setIsPublishing] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,7 +52,9 @@ export function CreatePost({onPublish, onCancel, initialTitle, initialContent, i
         if (!canPublish) return;
         setIsPublishing(true);
         try {
-            await onPublish(title.trim(), content.trim());
+            const imageMarkdown = uploadedImages.map(img => `![${img.name}](${img.url})`).join('\n\n');
+            const finalContent = imageMarkdown ? `${imageMarkdown}\n\n${content.trim()}` : content.trim();
+            await onPublish(title.trim(), finalContent);
         } finally {
             setIsPublishing(false);
         }
@@ -62,9 +82,6 @@ export function CreatePost({onPublish, onCancel, initialTitle, initialContent, i
                     ...prev,
                     {id: Math.random().toString(36).substring(2, 9), url: s3Url, name: file.name}
                 ]);
-
-                // 본문에 마크다운 이미지 삽입
-                setContent((prev) => prev + `\n\n![${file.name}](${s3Url})`);
             }
         } catch (e) {
             alert(`이미지 업로드에 실패했습니다.\n${e instanceof Error ? e.message : String(e)}`);
