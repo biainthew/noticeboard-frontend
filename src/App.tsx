@@ -20,6 +20,7 @@ import {
     NotificationDetail
 } from './lib/api';
 import {NotificationPanel} from "./components/NotificationPanel.tsx";
+import {sseManager} from "./lib/sseManager.ts";
 
 type Screen = 'auth' | 'board' | 'post' | 'newPost' | 'editPost';
 
@@ -78,19 +79,18 @@ export function App() {
         }
     }, [currentScreen]);
 
-    // 알림 목록 조회 + SSE 구독 (로그인 상태일 때)
+    // 알림 목록 조회 (로그인 상태일 때)
     useEffect(() => {
+        if (!isInitialized) return;
+
         const token = tokenStorage.get();
         if (!token) return;
 
+        // 새로고침 시 알림 목록만 조회, 구독은 하지 않음
         notificationApi.getList()
             .then((data) => setNotifications(Array.isArray(data) ? data : []))
-            .catch(() => {/* 알림 조회 실패 시 무시 */});
-
-        notificationApi.subscribe(token, (notification) => {
-            setNotifications((prev) => [notification, ...prev]);
-        });
-    }, [currentUserEmail]);
+            .catch(() => {/*empty*/});
+    }, [isInitialized]);
 
     const fetchPosts = async () => {
         try {
@@ -109,7 +109,22 @@ export function App() {
             await authApi.login(email, password);
             userEmailStorage.set(email);
             setCurrentUserEmail(email);
-            await fetchPosts();
+            try {
+                await fetchPosts();
+            } catch {
+                // 게시글 조회 실패해도 화면 전환은 진행
+            }
+            // 로그인 시 딱 한 번만 구독
+            const token = tokenStorage.get();
+            if (token) {
+                notificationApi.getList()
+                    .then((data) => setNotifications(Array.isArray(data) ? data : []))
+                    .catch(() => {});
+                sseManager.connect(token, (notification) => {
+                    setNotifications((prev) => [notification, ...prev]);
+                });
+            }
+
             setCurrentScreen('board');
         } catch (e) {
             addToast('로그인에 실패했습니다.');
@@ -126,6 +141,7 @@ export function App() {
     };
 
     const handleLogout = () => {
+        sseManager.disconnect();
         authApi.logout();
         userEmailStorage.remove();
         sessionStorage.removeItem('currentScreen');

@@ -1,5 +1,3 @@
-import { fetchEventSource } from '@microsoft/fetch-event-source';
-
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // 토큰 관리
@@ -250,26 +248,6 @@ export const notificationApi = {
 
     readAll: () =>
         fetchWithAuth('/api/notifications/read-all', {method: 'PATCH'}),
-
-    subscribe: (token: string, onMessage: (data: NotificationDetail) => void) => {
-        fetchEventSource(`${BASE_URL}/api/notifications/subscribe`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-            onmessage(event) {
-                if (event.event === 'connect') return; // 연결 확인 이벤트 무시
-                try {
-                    const data = JSON.parse(event.data);
-                    onMessage(data);
-                } catch {
-                    // JSON 파싱 실패 시 무시
-                }
-            },
-            onerror(err) {
-                console.error('SSE 연결 오류:', err);
-            },
-        });
-    },
 };
 
 // Image API

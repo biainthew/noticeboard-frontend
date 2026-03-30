@@ -32,6 +32,14 @@ export function AuthCard({onLogin, onSignUp}: AuthCardProps) {
         }
     };
 
+    // 탭 전환 시 입력값 초기화
+    const handleTabChange = (loginTab: boolean) => {
+        setIsLogin(loginTab);
+        setEmail('');
+        setPassword('');
+        setNickname('');
+    };
+
     return (
         <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 relative overflow-hidden">
             <div
@@ -64,7 +72,7 @@ export function AuthCard({onLogin, onSignUp}: AuthCardProps) {
                         return (
                             <button
                                 key={tab}
-                                onClick={() => setIsLogin(index === 0)}
+                                onClick={() => handleTabChange(index === 0)}
                                 className={`flex-1 py-2.5 text-sm font-medium rounded-lg relative z-10 transition-colors ${isActive ? 'text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
                                 {tab}
                                 {isActive && (
