@@ -130,11 +130,15 @@ export function NotificationPanel({
                                                                 <span className="font-semibold">{notification.senderNickname}</span>{' '}
                                                                 <span className="text-slate-600">{getMessage(notification.type)}</span>
                                                             </p>
-                                                            {notification.postTitle && (
+                                                            {notification.type.toLowerCase() === 'comment' && notification.commentContent ? (
+                                                                <p className="text-sm text-slate-500 mt-1 line-clamp-1">
+                                                                    "{notification.commentContent}"
+                                                                </p>
+                                                            ) : notification.postTitle ? (
                                                                 <p className="text-sm text-slate-500 mt-1 line-clamp-1">
                                                                     "{notification.postTitle}"
                                                                 </p>
-                                                            )}
+                                                            ) : null}
                                                             <p className="text-xs text-slate-400 mt-1.5">
                                                                 {new Date(notification.createdAt).toLocaleDateString('ko-KR')}
                                                             </p>

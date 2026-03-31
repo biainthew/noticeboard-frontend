@@ -130,6 +130,7 @@ export interface NotificationDetail {
     type: string;
     postId: number;
     postTitle: string | null;
+    commentContent: string | null;
     isRead: boolean;
     createdAt: string;
 }
