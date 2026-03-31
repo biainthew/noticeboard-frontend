@@ -1,5 +1,5 @@
 import {motion, AnimatePresence} from 'framer-motion';
-import {XIcon, HeartIcon, MessageCircleIcon, UserPlusIcon, CheckCheckIcon} from 'lucide-react';
+import {XIcon, HeartIcon, MessageCircleIcon, UserPlusIcon, CheckCheckIcon, Trash2Icon} from 'lucide-react';
 import {NotificationDetail} from '../lib/api';
 
 interface NotificationPanelProps {
@@ -8,14 +8,19 @@ interface NotificationPanelProps {
     notifications: NotificationDetail[];
     onMarkAsRead: (id: number) => void;
     onMarkAllAsRead: () => void;
+    onNotificationClick: (notification: NotificationDetail) => void;
+    onDeleteNotification: (id: number) => void
+    onDeleteAllNotifications: () => void
 }
 
 export function NotificationPanel({
                                       isOpen,
                                       onClose,
                                       notifications,
-                                      onMarkAsRead,
                                       onMarkAllAsRead,
+                                      onNotificationClick,
+                                      onDeleteNotification,
+                                      onDeleteAllNotifications,
                                   }: NotificationPanelProps) {
     const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -66,16 +71,25 @@ export function NotificationPanel({
                         className="fixed top-0 right-0 bottom-0 w-full sm:w-96 bg-white shadow-2xl z-50 flex flex-col"
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                            <div>
-                                <h2 className="text-xl font-bold text-slate-900">알림</h2>
-                                {unreadCount > 0 && (
-                                    <p className="text-sm text-slate-500 mt-0.5">
-                                        읽지 않은 알림 {unreadCount}개
-                                    </p>
-                                )}
+                        <div className="flex flex-col items-center gap-2 p-6 border-b border-slate-100">
+
+                            <div className="flex items-center justify-between w-full">
+                                <div>
+                                    <h2 className="text-xl font-bold text-slate-900">알림</h2>
+                                    {unreadCount > 0 && (
+                                        <p className="text-sm text-slate-500 mt-0.5">
+                                            읽지 않은 알림 {unreadCount}개
+                                        </p>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={onClose}
+                                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                >
+                                    <XIcon className="w-5 h-5"/>
+                                </button>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 w-full justify-end">
                                 {unreadCount > 0 && (
                                     <button
                                         onClick={onMarkAllAsRead}
@@ -85,12 +99,15 @@ export function NotificationPanel({
                                         모두 읽음
                                     </button>
                                 )}
-                                <button
-                                    onClick={onClose}
-                                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                                >
-                                    <XIcon className="w-5 h-5"/>
-                                </button>
+                                {notifications.length > 0 && (
+                                    <button
+                                        onClick={onDeleteAllNotifications}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                    >
+                                        <Trash2Icon className="w-3.5 h-3.5" />
+                                        모두 삭제
+                                    </button>
+                                )}
                             </div>
                         </div>
                         {/* Notifications List */}
@@ -113,10 +130,10 @@ export function NotificationPanel({
                                             key={notification.id}
                                             initial={{opacity: 0, y: 20}}
                                             animate={{opacity: 1, y: 0}}
-                                            className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer ${
+                                            className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer group ${
                                                 !notification.isRead ? 'bg-softPink-50/30' : ''
                                             }`}
-                                            onClick={() => !notification.isRead && onMarkAsRead(notification.id)}
+                                            onClick={() => onNotificationClick(notification)}
                                         >
                                             <div className="flex gap-3">
                                                 <div
@@ -144,10 +161,22 @@ export function NotificationPanel({
                                                             </p>
                                                         </div>
                                                         <div className="flex items-center gap-2">
-                                                            {getIcon(notification.type)}
-                                                            {!notification.isRead && (
-                                                                <div className="w-2 h-2 rounded-full bg-softPink-500"/>
-                                                            )}
+                                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                                                {getIcon(notification.type)}
+                                                                {!notification.isRead && (
+                                                                    <div className="w-2 h-2 rounded-full bg-softPink-500" />
+                                                                )}
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        onDeleteNotification(notification.id)
+                                                                    }}
+                                                                    className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                                                    aria-label="Delete notification"
+                                                                >
+                                                                    <XIcon className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
