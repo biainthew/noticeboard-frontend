@@ -88,8 +88,12 @@ export function App() {
             setIsLoading(true);
             const data = await postApi.getList();
             setPosts(data.content);
-        } catch (e) {
-            addToast('게시글 목록을 불러오지 못했습니다.');
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                addToast(e.message || '게시글 목록을 불러오지 못했습니다.');
+            } else {
+                addToast('게시글 목록을 불러오지 못했습니다.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -129,8 +133,12 @@ export function App() {
             }
 
             setCurrentScreen('board');
-        } catch (e) {
-            addToast('로그인에 실패했습니다.');
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                addToast(e.message || '로그인에 실패했습니다.');
+            } else {
+                addToast('로그인에 실패했습니다.');
+            }
         }
     };
 
@@ -138,8 +146,13 @@ export function App() {
         try {
             await authApi.signUp(email, password, nickname);
             addToast('회원가입이 완료됐습니다. 로그인해 주세요.');
-        } catch (e) {
-            addToast('회원가입에 실패했습니다.');
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                addToast(e.message || '회원가입에 실패했습니다.');
+            } else {
+                addToast('회원가입에 실패했습니다.');
+            }
+            throw e;
         }
     };
 
@@ -164,8 +177,12 @@ export function App() {
             setComments(commentList);
             sessionStorage.setItem('currentPostId', String(id));
             setCurrentScreen('post');
-        } catch (e) {
-            addToast('게시글을 불러오지 못했습니다.');
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                addToast(e.message || '게시글을 불러오지 못했습니다.');
+            } else {
+                addToast('게시글을 불러오지 못했습니다.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -197,8 +214,12 @@ export function App() {
                     prev ? {...prev, liked: !liked, likeCount: liked ? prev.likeCount - 1 : prev.likeCount + 1} : prev
                 );
             }
-        } catch (e) {
-            addToast('좋아요 처리에 실패했습니다.');
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                addToast(e.message || '좋아요 처리에 실패했습니다.');
+            } else {
+                addToast('좋아요 처리에 실패했습니다.');
+            }
         }
     };
 
@@ -216,8 +237,12 @@ export function App() {
             } else {
                 setComments((prev) => [...prev, newComment]);
             }
-        } catch (e) {
-            addToast('댓글 작성에 실패했습니다.');
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                addToast(e.message || '댓글 작성에 실패했습니다.');
+            } else {
+                addToast('댓글 작성에 실패했습니다.');
+            }
         }
     };
 
@@ -233,8 +258,12 @@ export function App() {
                     }))
             );
             addToast('댓글이 삭제됐습니다.');
-        } catch (e) {
-            addToast('댓글 삭제에 실패했습니다.');
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                addToast(e.message || '댓글 삭제에 실패했습니다.');
+            } else {
+                addToast('댓글 삭제에 실패했습니다.');
+            }
         }
     };
 
@@ -243,8 +272,12 @@ export function App() {
             await postApi.create(title, content);
             addToast('게시글이 작성됐습니다.');
             setCurrentScreen('board');
-        } catch (e) {
-            addToast('게시글 작성에 실패했습니다.');
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                addToast(e.message || '게시글 작성에 실패했습니다.');
+            } else {
+                addToast('게시글 작성에 실패했습니다.');
+            }
         }
     };
 
@@ -263,8 +296,12 @@ export function App() {
             setSelectedPost((prev) => prev ? {...updated, liked: prev.liked, likeCount: prev.likeCount} : updated);
             addToast('게시글이 수정됐습니다.');
             setCurrentScreen('post');
-        } catch (e) {
-            addToast('게시글 수정에 실패했습니다.');
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                addToast(e.message || '게시글 수정에 실패했습니다.');
+            } else {
+                addToast('게시글 수정에 실패했습니다.');
+            }
         }
     };
 
@@ -274,8 +311,12 @@ export function App() {
             setPosts((prev) => prev.filter((p) => p.id !== postId));
             addToast('게시글이 삭제됐습니다.');
             setCurrentScreen('board');
-        } catch (e) {
-            addToast('게시글 삭제에 실패했습니다.');
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                addToast(e.message || '게시글 삭제에 실패했습니다.');
+            } else {
+                addToast('게시글 삭제에 실패했습니다.');
+            }
         }
     };
 
@@ -295,8 +336,12 @@ export function App() {
                 )
             );
             addToast('댓글이 수정됐습니다.');
-        } catch (e) {
-            addToast('댓글 수정에 실패했습니다.');
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                addToast(e.message || '댓글 수정에 실패했습니다.');
+            } else {
+                addToast('댓글 수정에 실패했습니다.');
+            }
         }
     };
 
@@ -304,14 +349,36 @@ export function App() {
         setNotifications((prev) => prev.map((n) => n.id === id ? {...n, isRead: true} : n));
     };
 
+    const handleNotificationClick = (notification: NotificationDetail) => {
+        if (!notification.isRead) {
+            handleMarkNotificationAsRead(notification.id);
+        }
+        if (notification.postId) {
+            setIsNotificationPanelOpen(false);
+            handlePostClick(notification.postId);
+        }
+    };
+
     const handleMarkAllNotificationsAsRead = async () => {
         try {
             await notificationApi.readAll();
             setNotifications((prev) => prev.map((n) => ({...n, isRead: true})));
-        } catch (e) {
-            addToast('알림 읽음 처리에 실패했습니다.');
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                addToast(e.message || '알림 읽음 처리에 실패했습니다.');
+            } else {
+                addToast('알림 읽음 처리에 실패했습니다.');
+            }
         }
     };
+
+    const handleDeleteNotification = (id: number) => {
+        setNotifications((prev) => prev.filter((notif) => notif.id !== id))
+    }
+
+    const handleDeleteAllNotifications = () => {
+        setNotifications([])
+    }
 
     if (!isInitialized) return null;
 
@@ -389,6 +456,9 @@ export function App() {
                 notifications={notifications}
                 onMarkAsRead={handleMarkNotificationAsRead}
                 onMarkAllAsRead={handleMarkAllNotificationsAsRead}
+                onNotificationClick={handleNotificationClick}
+                onDeleteNotification={handleDeleteNotification}
+                onDeleteAllNotifications={handleDeleteAllNotifications}
             />
         </div>
     );

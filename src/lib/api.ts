@@ -61,7 +61,8 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}, retry = tru
 
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || '요청에 실패했습니다.');
+        const firstError = error.errors ? Object.values(error.errors)[0] : null;
+        throw new Error((firstError as string) || error.message || '요청에 실패했습니다.');
     }
 
     if (response.status === 204 ||
@@ -152,7 +153,8 @@ export const authApi = {
 
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || '로그인에 실패했습니다.');
+            const firstError = error.errors ? Object.values(error.errors)[0] : null;
+            throw new Error((firstError as string) || error.message || '로그인에 실패했습니다.');
         }
 
         const data: TokenResponse = await response.json();
