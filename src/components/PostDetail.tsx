@@ -456,7 +456,7 @@ export function PostDetail({post, comments, currentUserEmail, onBack, onLikeTogg
                             아직 댓글이 없습니다. 첫 번째 댓글을 남겨보세요!
                         </p>
                     ) : (
-                        renderComments(comments)
+                        renderComments([...comments].reverse())
                     )}
                 </div>
             </section>
